@@ -1,27 +1,84 @@
 #include <stdio.h>
 #include <string.h>
 
+void print_heart_card(char x){
+	printf("***********************\n");
+	printf("*  %-2c                *\n",x);
+	printf("*      ***     ***    *\n");
+	printf("*     *****   *****   *\n");
+	printf("*    ***************  *\n");
+	printf("*   ***************** *\n");
+	printf("*    ***************  *\n");
+	printf("*      ***********    *\n");
+	printf("*        *******      *\n");
+	printf("*          ***        *\n");
+	printf("*           *         *\n");
+	printf("*                     *\n");
+	printf("*                     *\n");
+	printf("*                     *\n");
+	printf("***********************\n");
+}
+
+void print_diamond_card(char x){
+	printf("***********************\n");
+	printf("*  %-2c                *\n",x);
+	printf("*           *         *\n");
+	printf("*          ***        *\n");
+	printf("*        *******      *\n");
+	printf("*      ***********    *\n");
+	printf("*    ***************  *\n");
+	printf("*      ***********    *\n");
+	printf("*        *******      *\n");
+	printf("*          ***        *\n");
+	printf("*           *         *\n");
+	printf("*                     *\n");
+	printf("*                     *\n");
+	printf("*                     *\n");
+	printf("***********************\n");
+}
+
+void print_club_card(char x){
+	printf("***********************\n");
+	printf("*  %-2c                *\n",x);
+	printf("*          ***        *\n");
+	printf("*         *****       *\n");
+	printf("*          ***        *\n");
+	printf("*     ***   *   ***   *\n");
+	printf("*    ***************  *\n");
+	printf("*     ***   *   ***   *\n");
+	printf("*           *         *\n");
+	printf("*          ***        *\n");
+	printf("*        *******      *\n");
+	printf("*                     *\n");
+	printf("*                     *\n");
+	printf("*                     *\n");
+	printf("***********************\n");
+}
+
+void print_spade_card(char x){
+	printf("***********************\n");
+	printf("*  %-2c                *\n",x);
+	printf("*           *         *\n");
+	printf("*          ***        *\n");
+	printf("*        *******      *\n");
+	printf("*      ***********    *\n");
+	printf("*    ***************  *\n");
+	printf("*     ***   *   ***   *\n");
+	printf("*           *         *\n");
+	printf("*          ***        *\n");
+	printf("*        *******      *\n");
+	printf("*                     *\n");
+	printf("*                     *\n");
+	printf("*                     *\n");
+	printf("***********************\n");
+}
+
 void main(){
-	char str[100];
-	printf("Enter string: ");
-	scanf("%s", str);
-
-	char strs[5][100];
-	for(int i = 0; i < 5; i++){
-		memset(strs[i], '\0', 100);
-	}
-
-	char *token = strtok(str, "#");
-
-	int k = 0;
-	while(token != NULL){
-		// printf("%s\n", token);
-		strcpy(strs[k], token);
-		token = strtok(NULL, "#");
-		k++;
-	}
-
-	for(int i = 0; i < 5; i++){
-		printf("%d-%s-\n",i,strs[i]);
-	}
+	print_heart_card('A');
+	printf("\n");
+	print_diamond_card('1');
+	printf("\n");
+	print_club_card('A');
+	printf("\n");
+	print_spade_card('A');
 }

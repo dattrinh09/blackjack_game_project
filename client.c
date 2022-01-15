@@ -8,6 +8,13 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio_ext.h>
+#include "common.h"
+
+//Common
+int get_suit_id(char suit);
+int get_value_id(char value);
+int calc_sum(const int hand_values[], int ncards);
+void display_state(int hand_values[], int hand_suits[], int ncards);
 
 typedef struct _Data{
 	char value[100];
@@ -36,6 +43,9 @@ Data inputString(char label[31]){
 			str[i] = c;
 			i++;
 		}
+
+		if(str[0] == '\0') check = 0;
+
 		if(check == 0){
 			printf("Input is incorrect\n");
 			memset(str, '\0', 31*sizeof(char));
@@ -45,6 +55,21 @@ Data inputString(char label[31]){
 	Data a;
 	strcpy(a.value, str);
 	return a;
+}
+
+int checkScore(char *str, int score){
+	if((strcmp(str, "50") == 0) || 
+	   (strcmp(str, "100") == 0) || 
+	   (strcmp(str, "150") == 0) || 
+	   (strcmp(str, "200") == 0) ||
+	   (strcmp(str, "250") == 0)){
+
+	   	int n = atoi(str);
+	    if(n <= score) return 1;
+	    else printf("Score bet is greate than your current score!\n");		
+	}
+
+	return 0; 
 }
 
 int checkIPIsValid(char *ipAddr){
@@ -70,6 +95,28 @@ int checkIPIsValid(char *ipAddr){
 	}
 
 	return 1;
+}
+
+int printResult(char c, int cur_score, int score_bet){
+	printf("\n");
+	switch(c){
+		case 'W':
+			printf("You win!\n");
+			cur_score = cur_score + score_bet;
+			break;
+		case 'L':
+			printf("You lose!\n");
+			cur_score = cur_score - score_bet;
+			break;
+		case 'P':
+			printf("Push!\n\n");
+			break;
+		default:
+			printf("Two busted!\n");
+			break;
+		}
+
+	return cur_score;
 }
 
 int main(int argc, char *argv[])
@@ -215,6 +262,199 @@ int main(int argc, char *argv[])
 				printf("Score: %d\n", curAcc.score);
 			}
 
+			if(strcmp(menuOp.value, "2") == 0){
+				printf("Well come to game\n");
+				Data option = inputString("Start new game y(yes) n(no): ");
+
+				if(strcmp(option.value, "y") == 0){
+					Data score_str;
+					while(10){
+						memset(score_str.value, '\0', 100);
+						score_str = inputString("Enter score you want bet (50 - 100 - 150 - 200 - 250): ");
+						if(checkScore(score_str.value, curAcc.score) == 1)
+							break;
+						else printf("You input wrong score! Try again\n");
+					}
+					strcpy(sendline, "1#2#0#");
+					strcat(sendline, score_str.value);
+					int score_bet = atoi(score_str.value);
+					send(sockfd, sendline, strlen(sendline), 0);
+					printf("Watting.........\n");
+
+					n = recv(sockfd, recvline, 100, 0);
+					recvline[n] = '\0';
+					int dealer_hand_values[7];
+					int dealer_hand_suits[7];
+					int player_hand_suits[7];
+					int player_hand_values[7];
+
+					player_hand_values[0] = get_value_id(recvline[0]);
+					player_hand_suits[0] = get_suit_id(recvline[1]);
+					player_hand_values[1] = get_value_id(recvline[2]);
+					player_hand_suits[1] = get_suit_id(recvline[3]);
+					dealer_hand_values[0] = get_value_id(recvline[4]);
+					dealer_hand_suits[0] = get_suit_id(recvline[5]);
+					dealer_hand_values[1] = get_value_id(recvline[6]);
+					dealer_hand_suits[1] = get_suit_id(recvline[7]);
+
+					int n_player_cards = 2;
+					int n_dealer_cards = 2;
+
+					if(recvline[8] == 'C'){
+						if(recvline[4] == 'A'){
+							printf("Dealer hands:\n");
+							display_state(dealer_hand_values, dealer_hand_suits, 1);
+							printf("Your hands:\n");
+							display_state(player_hand_values, player_hand_suits, n_player_cards);
+							Data ins_op = inputString("Do you want insurance y(yes) or n(no): ");
+							if(strcmp(ins_op.value, "y") == 0){
+								strcpy(sendline, "1#2#5");
+								send(sockfd, sendline, strlen(sendline), 0);
+								printf("Watting.........\n");
+
+								n = recv(sockfd, recvline, 100, 0);
+								recvline[n] = '\0';
+
+								printf("Dealer hands:\n");
+								display_state(dealer_hand_values, dealer_hand_suits, n_dealer_cards);
+
+								if(strcmp(recvline, "BJ") == 0){
+									printf("Dealer is Blackjack - You win!\n");
+									curAcc.score = curAcc.score + score_bet;
+								}
+								else printf("Dealer not Blackjack - You lose!\n");
+
+								printf("\nCurrent Score: %d\n",curAcc.score);
+								printf("----------------------------------------\n");
+							}else{
+								printf("Continue........\n");
+							}
+						}
+
+						while(10){
+							printf("Dealer hands:\n");
+							display_state(dealer_hand_values, dealer_hand_suits, 1);
+							printf("Your hands:\n");
+							display_state(player_hand_values, player_hand_suits, n_player_cards);
+
+							printf("\n1. Hit\n");
+							printf("2. Stand\n");
+							printf("3. Double\n");
+							printf("4. Surrender\n");
+
+							Data play = inputString("Enter your option: ");
+
+							if(strcmp(play.value, "3") == 0){
+								strcpy(sendline, "1#2#3");
+								send(sockfd, sendline, strlen(sendline), 0);
+								printf("Watting.........\n");
+
+								n = recv(sockfd, recvline, 100, 0);
+								recvline[n] = '\0';
+
+								player_hand_values[n_player_cards] = get_value_id(recvline[0]);
+								player_hand_suits[n_player_cards] = get_suit_id(recvline[1]);
+								n_player_cards = n_player_cards + 1;
+
+								printf("Dealer hands:\n");
+								display_state(dealer_hand_values, dealer_hand_suits, n_dealer_cards);
+								printf("Your hands:\n");
+								display_state(player_hand_values, player_hand_suits, n_player_cards);
+
+								curAcc.score = printResult(recvline[2], curAcc.score, score_bet * 2);
+
+								printf("\nCurrent Score: %d\n",curAcc.score);
+								printf("----------------------------------------\n");
+
+								break;
+							}
+
+							if(strcmp(play.value, "1") == 0){
+								strcpy(sendline, "1#2#1");
+								send(sockfd, sendline, strlen(sendline), 0);
+								printf("Watting.........\n");
+
+								n = recv(sockfd, recvline, 100, 0);
+								recvline[n] = '\0';
+
+
+								player_hand_values[n_player_cards] = get_value_id(recvline[0]);
+								player_hand_suits[n_player_cards] = get_suit_id(recvline[1]);
+								n_player_cards = n_player_cards + 1;
+
+								if(recvline[2] == 'C'){
+									printf("Continue.........\n");
+								}else{
+									printf("Dealer hands:\n");
+									display_state(dealer_hand_values, dealer_hand_suits, n_dealer_cards);
+									printf("Your hands:\n");
+									display_state(player_hand_values, player_hand_suits, n_player_cards);
+
+									curAcc.score = printResult(recvline[2], curAcc.score, score_bet);
+
+									printf("\nCurrent Score: %d\n",curAcc.score);
+									printf("----------------------------------------\n");
+
+									break;
+								}
+							}
+
+							if(strcmp(play.value, "2") == 0){
+								strcpy(sendline, "1#2#2");
+								send(sockfd, sendline, strlen(sendline), 0);
+								printf("Watting.........\n");
+
+								n = recv(sockfd, recvline, 100, 0);
+								recvline[n] = '\0';
+
+								if(recvline[0] == '0'){
+									printf("Dealer hands:\n");
+									display_state(dealer_hand_values, dealer_hand_suits, n_dealer_cards);
+									printf("Your hands:\n");
+									display_state(player_hand_values, player_hand_suits, n_player_cards);
+
+									curAcc.score = printResult(recvline[1], curAcc.score, score_bet);
+
+									printf("\nCurrent Score: %d\n",curAcc.score);
+									printf("----------------------------------------\n");
+								}else{
+									int j = 1;
+									while(recvline[j] != '#'){
+										dealer_hand_values[n_dealer_cards] = get_value_id(recvline[j]);
+										dealer_hand_suits[n_dealer_cards] = get_suit_id(recvline[j+1]);
+										n_dealer_cards = n_dealer_cards + 1;
+										j = j + 2;
+									}
+
+									printf("Dealer hands:\n");
+									display_state(dealer_hand_values, dealer_hand_suits, n_dealer_cards);
+									printf("Your hands:\n");
+									display_state(player_hand_values, player_hand_suits, n_player_cards);
+
+									curAcc.score = printResult(recvline[j+1], curAcc.score, score_bet);
+
+									printf("\nCurrent Score: %d\n",curAcc.score);
+									printf("----------------------------------------\n");
+								}
+
+								break;
+							}
+						}
+
+					}else{
+						printf("Dealer hands:\n");
+						display_state(dealer_hand_values, dealer_hand_suits, 2);
+						printf("Your hands:\n");
+						display_state(player_hand_values, player_hand_suits, 2);
+
+						printf("Black Jack - You win!\n\n");
+						curAcc.score = curAcc.score + score_bet * 3 / 2; 
+						printf("\nCurrent Score: %d\n",curAcc.score);
+						printf("----------------------------------------\n");
+					}
+				}
+			}
+
 			if(strcmp(menuOp.value, "4") == 0){
 				strcpy(sendline, "1#4");
 				send(sockfd, sendline, strlen(sendline), 0);
@@ -222,11 +462,12 @@ int main(int argc, char *argv[])
 				n = recv(sockfd, recvline, 100, 0);
 				recvline[n] = '\0';
 
-				if(strcmp(sendline, "LOGOUT") == 0){
+				
+				if(strcmp(recvline, "LOGOUT") == 0){
+					printf("Goodbye %s\n", curAcc.username);
 					memset(curAcc.username, '\0', 31);
 					curAcc.score = 0;
 					isLogin = 0;
-					printf("Goodbye %s\n", curAcc.username);
 				}
 			}
 		}

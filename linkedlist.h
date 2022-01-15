@@ -7,6 +7,7 @@ typedef struct _Account{
 	char password[31];
 	int status;
 	int score;
+	int isLogin;
 }Account;
 
 struct AccountList{
@@ -24,6 +25,7 @@ node createNode(Account a){
 	strcpy(temp->value.password, a.password);
 	temp->value.status = a.status;
 	temp->value.score = a.score;
+	temp->value.isLogin = 0;
 
 	return temp;
 }
@@ -191,4 +193,20 @@ void changePassword(node head, Account a, char newPass[31], char fileName[31]){
 			}
 		p = p->next;
 	}	
+}
+
+void updateScore(node head, Account a, int score, int check, char fileName[31]){
+	node p = head;
+	while(p != NULL){
+		if((strcmp(p->value.username, a.username) == 0))
+			{
+				if(check == 1){
+					p->value.score = p->value.score + score;
+				}else{
+					p->value.score = p->value.score - score;
+				}
+				storeFile(head, fileName);
+			}
+		p = p->next;
+	}
 }
