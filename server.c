@@ -107,34 +107,6 @@ int checkWin_double(int d_score, int p_score){
 	return -1;
 }
 
-char update_score(int check, node head, Account a, int score, char fileName[31]){
-	char c;
-	pthread_mutex_t mptr;
-
-	switch(check){
-		case 0:
-			c = 'P';
-			break;
-		case 1:
-			c = 'W';
-			pthread_mutex_lock(&mptr);
-			updateScore(head, a, score, 1, fileName);
-			pthread_mutex_unlock(&mptr);
-			break;
-		case 2:
-			c = 'L';
-			pthread_mutex_lock(&mptr);
-			updateScore(head, a, score, 0, fileName);
-			pthread_mutex_unlock(&mptr);
-			break;
-		default:
-			c = 'B';
-			break;
-		}
-
-	return c;
-}
-
 void *client_handler(void *arg){
 	int clientfd;
 	int sendBytes, recvBytes;
@@ -353,7 +325,23 @@ void *client_handler(void *arg){
 						int player_score = calc_sum(player_hand_values, n_player_cards);
 
 						buf[0] = '0';
-						buf[1] = update_score(checkWin_stand(dealer_score, player_score), head, acc->value, score_bet, "account.txt");
+						switch(checkWin_stand(dealer_score, player_score)){
+							case 1:
+								buf[1] = 'W';
+								pthread_mutex_lock(&mptr);
+								updateScore(head, acc->value, score_bet, 1, "account.txt");
+								pthread_mutex_unlock(&mptr);
+								break;
+							case 2:
+								buf[1] = 'L';
+								pthread_mutex_lock(&mptr);
+								updateScore(head, acc->value, score_bet, 0, "account.txt");
+								pthread_mutex_unlock(&mptr);
+								break;
+							default:
+								buf[1] = 'P';
+								break;
+						}
 						buf[2] = 0;
 					}else{
 						buf[0] = '1';
@@ -375,14 +363,28 @@ void *client_handler(void *arg){
 						int dealer_score = calc_sum(dealer_hand_values, n_dealer_cards);
 						int player_score = calc_sum(player_hand_values, n_player_cards);
 
-						buf[n+1] = update_score(checkWin_stand(dealer_score, player_score), head, acc->value, score_bet, "account.txt");
+						switch(checkWin_stand(dealer_score, player_score)){
+							case 1:
+								buf[n+1] = 'W';
+								pthread_mutex_lock(&mptr);
+								updateScore(head, acc->value, score_bet, 1, "account.txt");
+								pthread_mutex_unlock(&mptr);
+								break;
+							case 2:
+								buf[n+1] = 'L';
+								pthread_mutex_lock(&mptr);
+								updateScore(head, acc->value, score_bet, 0, "account.txt");
+								pthread_mutex_unlock(&mptr);
+								break;
+							default:
+								buf[n+1] = 'P';
+								break;
+						}
 						buf[n+2] = 0;
 					}
 
 					display_state(dealer_hand_values, dealer_hand_suits, n_dealer_cards);
 					display_state(player_hand_values, player_hand_suits, n_player_cards);
-
-					printf("%s-\n", buf);
 				}
 
 				if(option == 3){
@@ -398,7 +400,26 @@ void *client_handler(void *arg){
 					int player_score = calc_sum(player_hand_values, n_player_cards);
 					int double_score = score_bet * 2;
 
-					buf[2] = update_score(checkWin_double(dealer_score, player_score), head, acc->value, double_score, "account.txt");	
+					switch(checkWin_double(dealer_score, player_score)){
+						case 0:
+							buf[2] = 'P';
+							break;
+						case 1:
+							buf[2] = 'W';
+							pthread_mutex_lock(&mptr);
+							updateScore(head, acc->value, double_score, 1, "account.txt");
+							pthread_mutex_unlock(&mptr);
+							break;
+						case 2:
+							buf[2] = 'L';
+							pthread_mutex_lock(&mptr);
+							updateScore(head, acc->value, double_score, 0, "account.txt");
+							pthread_mutex_unlock(&mptr);
+							break;
+						default:
+							buf[2] = 'B';
+							break;
+					}	
 					buf[3] = 0;
 					display_state(dealer_hand_values, dealer_hand_suits, n_dealer_cards);
 					display_state(player_hand_values, player_hand_suits, n_player_cards);

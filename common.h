@@ -53,7 +53,11 @@ void display_state(int hand_values[], int hand_suits[], int ncards)
 		if (i > 0)
 			printf(" ");
 		//printf("%s-%s", values[hand_values[i]], suits[hand_suits[i]]);
-		printf(" || %c ", value_codes[hand_values[i]]);
+		if(value_codes[hand_values[i]] == 'T'){
+			printf(" || 10 ");
+		}else{
+			printf(" || %c ", value_codes[hand_values[i]]);
+		}
 		switch (suit_codes[hand_suits[i]]){
 			case 'S':
 				printf(" ♠ ||");
@@ -70,6 +74,7 @@ void display_state(int hand_values[], int hand_suits[], int ncards)
 			default:
 				break;
 		}
+		if(ncards == 1) printf("  || X  X ||");
 	}
 	printf("\nSum: %d", sum);
 	if (sum > 21)
